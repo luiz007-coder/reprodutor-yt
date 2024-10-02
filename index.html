@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>reprodutor yt</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f4f4f4;
+    }
+
+    #player {
+      margin-top: 20px;
+      width: 80%;
+      max-width: 640px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 360px;
+    }
+
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      cursor: pointer;
+    }
+
+    input {
+      width: 60%;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Reprodutor de vídeo</h1>
+  <input type="text" id="videoLink" placeholder="Coloque o link do vídeo do YouTube aqui">
+  <br>
+  <button onclick="playVideo()">Rodar</button>
+  <button onclick="openInWindow()">Modo Janela</button>
+
+  <div id="player">
+    <iframe id="youtubePlayer" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  </div>
+
+  <script>
+    function extractVideoId(url) {
+      const regExp = /^.*(youtu.be\/|v\/|embed\/|watch\?v=|watch\?.+&v=)([^#&?]*).*/;
+      const match = url.match(regExp);
+      return (match && match[2].length === 11) ? match[2] : null;
+    }
+
+    function playVideo() {
+      const videoLink = document.getElementById("videoLink").value;
+      const videoId = extractVideoId(videoLink);
+      if (videoId) {
+        const iframe = document.getElementById("youtubePlayer");
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      } else {
+        alert("Link inválido. Por favor, insira um link válido do YouTube.");
+      }
+    }
+
+    function openInWindow() {
+      const videoLink = document.getElementById("videoLink").value;
+      const videoId = extractVideoId(videoLink);
+      if (videoId) {
+        const popup = window.open("", "_blank", "width=640,height=360");
+        popup.document.write(`
+          <iframe width="640" height="360" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        `);
+      } else {
+        alert("Link inválido. Por favor, insira um link válido do YouTube.");
+      }
+    }
+  </script>
+
+</body>
+</html>
