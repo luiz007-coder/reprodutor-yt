@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>reprodutor yt</title>
+  <title>Reprodutor de Vídeo Flutuante</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -15,8 +15,7 @@
       background-color: #f4f4f4;
     }
 
-    #player {
-      margin-top: 20px;
+    #playerContainer {
       width: 80%;
       max-width: 640px;
     }
@@ -26,32 +25,63 @@
       height: 360px;
     }
 
-    button {
-      padding: 10px 20px;
-      margin: 10px;
+    #floatingPlayer {
+      display: none;
+      position: fixed;
+      width: 300px;
+      height: 200px;
+      background-color: #000;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      border: 2px solid #333;
+      border-radius: 8px;
+    }
+
+    #floatingPlayer iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    #floatingPlayer .close {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: red;
+      color: white;
+      padding: 5px;
+      border: none;
       cursor: pointer;
     }
 
-    input {
-      width: 60%;
+    input, button {
+      margin: 10px;
       padding: 10px;
-      margin-bottom: 10px;
     }
   </style>
 </head>
 <body>
 
-  <h1>Reprodutor de vídeo</h1>
+  <h1>Reprodutor de Vídeo Flutuante</h1>
   <input type="text" id="videoLink" placeholder="Coloque o link do vídeo do YouTube aqui">
   <br>
   <button onclick="playVideo()">Rodar</button>
-  <button onclick="openInWindow()">Modo Janela</button>
+  <button onclick="openFloatingPlayer()">Modo Flutuante</button>
 
-  <div id="player">
+  <div id="playerContainer">
     <iframe id="youtubePlayer" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
   </div>
 
+  <div id="floatingPlayer">
+    <button class="close" onclick="closeFloatingPlayer()">X</button>
+    <iframe id="floatingYoutubePlayer" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+  </div>
+
   <script>
+    let isDragging = false;
+    let offsetX, offsetY;
+
     function extractVideoId(url) {
       const regExp = /^.*(youtu.be\/|v\/|embed\/|watch\?v=|watch\?.+&v=)([^#&?]*).*/;
       const match = url.match(regExp);
@@ -69,19 +99,74 @@
       }
     }
 
-    function openInWindow() {
+    function openFloatingPlayer() {
       const videoLink = document.getElementById("videoLink").value;
       const videoId = extractVideoId(videoLink);
       if (videoId) {
-        const popup = window.open("", "_blank", "width=640,height=360");
-        popup.document.write(`
-          <iframe width="640" height="360" src="https://www.youtube.com/embed/${videoId}?autoplay=1" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-        `);
+        const floatingPlayer = document.getElementById("floatingPlayer");
+        const iframe = document.getElementById("floatingYoutubePlayer");
+        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        floatingPlayer.style.display = 'block';
+        initDragElement(floatingPlayer);
       } else {
         alert("Link inválido. Por favor, insira um link válido do YouTube.");
       }
     }
-  </script>
 
-</body>
-</html>
+    function closeFloatingPlayer() {
+      const floatingPlayer = document.getElementById("floatingPlayer");
+      floatingPlayer.style.display = 'none';
+      const iframe = document.getElementById("floatingYoutubePlayer");
+      iframe.src = ''; 
+    }
+
+    
+    function initDragElement(element) {
+      element.onmousedown = dragMouseDown;
+      element.ontouchstart = dragTouchStart;
+
+      function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        isDragging = true;
+        offsetX = e.clientX - element.getBoundingClientRect().left;
+        offsetY = e.clientY - element.getBoundingClientRect().top;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+      }
+
+      function dragTouchStart(e) {
+        e.preventDefault();
+        isDragging = true;
+        const touch = e.touches[0];
+        offsetX = touch.clientX - element.getBoundingClientRect().left;
+        offsetY = touch.clientY - element.getBoundingClientRect().top;
+        document.ontouchend = closeDragElement;
+        document.ontouchmove = elementDrag;
+      }
+
+      function elementDrag(e) {
+        if (!isDragging) return;
+        e = e || window.event;
+        e.preventDefault();
+        if (e.touches) {
+        
+          const touch = e.touches[0];
+          element.style.left = (touch.clientX - offsetX) + "px";
+          element.style.top = (touch.clientY - offsetY) + "px";
+        } else {
+        
+          element.style.left = (e.clientX - offsetX) + "px";
+          element.style.top = (e.clientY - offsetY) + "px";
+        }
+      }
+
+      function closeDragElement() {
+        isDragging = false;
+        document.onmouseup = null;
+        document.onmousemove = null;
+        document.ontouchend = null;
+        document.ontouchmove = null;
+      }
+    }
+  </script>
