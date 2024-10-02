@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reprodutor de Vídeo Flutuante</title>
+  <title>Reprodutor com Picture-in-Picture</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -25,37 +25,7 @@
       height: 360px;
     }
 
-    #floatingPlayer {
-      display: none;
-      position: fixed;
-      width: 300px;
-      height: 200px;
-      background-color: #000;
-      top: 20px;
-      left: 20px;
-      z-index: 1000;
-      border: 2px solid #333;
-      border-radius: 8px;
-    }
-
-    #floatingPlayer iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-
-    #floatingPlayer .close {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background-color: red;
-      color: white;
-      padding: 5px;
-      border: none;
-      cursor: pointer;
-    }
-
-    input, button {
+    button, input {
       margin: 10px;
       padding: 10px;
     }
@@ -63,25 +33,20 @@
 </head>
 <body>
 
-  <h1>Reprodutor de Vídeo Flutuante</h1>
+  <h1>Reprodutor com Picture-in-Picture</h1>
   <input type="text" id="videoLink" placeholder="Coloque o link do vídeo do YouTube aqui">
   <br>
   <button onclick="playVideo()">Rodar</button>
-  <button onclick="openFloatingPlayer()">Modo Flutuante</button>
+  <button onclick="enablePictureInPicture()">Modo Picture-in-Picture</button>
 
   <div id="playerContainer">
-    <iframe id="youtubePlayer" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-  </div>
-
-  <div id="floatingPlayer">
-    <button class="close" onclick="closeFloatingPlayer()">X</button>
-    <iframe id="floatingYoutubePlayer" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+    <video id="videoPlayer" controls crossorigin playsinline style="width:100%;">
+      <source id="videoSource" src="" type="video/mp4">
+      Seu navegador não suporta o elemento de vídeo.
+    </video>
   </div>
 
   <script>
-    let isDragging = false;
-    let offsetX, offsetY;
-
     function extractVideoId(url) {
       const regExp = /^.*(youtu.be\/|v\/|embed\/|watch\?v=|watch\?.+&v=)([^#&?]*).*/;
       const match = url.match(regExp);
@@ -92,81 +57,39 @@
       const videoLink = document.getElementById("videoLink").value;
       const videoId = extractVideoId(videoLink);
       if (videoId) {
-        const iframe = document.getElementById("youtubePlayer");
-        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+        const videoUrl = `https://www.youtube.com/embed/${videoId}`;
+        const iframe = document.createElement('iframe');
+        iframe.src = videoUrl;
+        iframe.width = "100%";
+        iframe.height = "360";
+        iframe.frameBorder = "0";
+        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+        iframe.allowFullscreen = true;
+        document.getElementById('playerContainer').innerHTML = '';
+        document.getElementById('playerContainer').appendChild(iframe);
       } else {
         alert("Link inválido. Por favor, insira um link válido do YouTube.");
       }
     }
 
-    function openFloatingPlayer() {
-      const videoLink = document.getElementById("videoLink").value;
-      const videoId = extractVideoId(videoLink);
-      if (videoId) {
-        const floatingPlayer = document.getElementById("floatingPlayer");
-        const iframe = document.getElementById("floatingYoutubePlayer");
-        iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-        floatingPlayer.style.display = 'block';
-        initDragElement(floatingPlayer);
-      } else {
-        alert("Link inválido. Por favor, insira um link válido do YouTube.");
-      }
-    }
-
-    function closeFloatingPlayer() {
-      const floatingPlayer = document.getElementById("floatingPlayer");
-      floatingPlayer.style.display = 'none';
-      const iframe = document.getElementById("floatingYoutubePlayer");
-      iframe.src = ''; 
-    }
-
-    
-    function initDragElement(element) {
-      element.onmousedown = dragMouseDown;
-      element.ontouchstart = dragTouchStart;
-
-      function dragMouseDown(e) {
-        e = e || window.event;
-        e.preventDefault();
-        isDragging = true;
-        offsetX = e.clientX - element.getBoundingClientRect().left;
-        offsetY = e.clientY - element.getBoundingClientRect().top;
-        document.onmouseup = closeDragElement;
-        document.onmousemove = elementDrag;
-      }
-
-      function dragTouchStart(e) {
-        e.preventDefault();
-        isDragging = true;
-        const touch = e.touches[0];
-        offsetX = touch.clientX - element.getBoundingClientRect().left;
-        offsetY = touch.clientY - element.getBoundingClientRect().top;
-        document.ontouchend = closeDragElement;
-        document.ontouchmove = elementDrag;
-      }
-
-      function elementDrag(e) {
-        if (!isDragging) return;
-        e = e || window.event;
-        e.preventDefault();
-        if (e.touches) {
-        
-          const touch = e.touches[0];
-          element.style.left = (touch.clientX - offsetX) + "px";
-          element.style.top = (touch.clientY - offsetY) + "px";
-        } else {
-        
-          element.style.left = (e.clientX - offsetX) + "px";
-          element.style.top = (e.clientY - offsetY) + "px";
+    async function enablePictureInPicture() {
+      const video = document.querySelector('video');
+      if ('pictureInPictureEnabled' in document) {
+        try {
+          if (!document.pictureInPictureElement) {
+            await video.requestPictureInPicture();
+          } else {
+            await document.exitPictureInPicture();
+          }
+        } catch (error) {
+          console.error(error);
         }
-      }
-
-      function closeDragElement() {
-        isDragging = false;
-        document.onmouseup = null;
-        document.onmousemove = null;
-        document.ontouchend = null;
-        document.ontouchmove = null;
+      } else {
+        alert('Seu navegador não suporta o modo Picture-in-Picture.');
       }
     }
   </script>
+
+</body>
+</html>
+
